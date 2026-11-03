@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clubbing All Night Long</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700;1,9..144,900&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- pencil wobble for hand-drawn lines and labels -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="pencil" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<a class="skip" href="#game">Skip to the game ↓</a>
+
+<!-- ============ FIXED STAGES ============ -->
+<div id="stages">
+
+  <!-- INTRO -->
+  <div class="stage paper" data-scene="intro">
+    <svg class="thread" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <line id="introThread" x1="50" y1="0" x2="50" y2="10" stroke="#3a3430" stroke-width=".25" vector-effect="non-scaling-stroke" filter="url(#pencil)"/>
+    </svg>
+    <img class="bug hang" id="introSpider" src="img/spider-c.png" alt="" style="--x:.5;--y:.12;--s:.11;--r:180deg">
+    <div class="title-card" id="titleCard">
+      <p class="kicker">A true story by Jenny</p>
+      <h1>Clubbing<br>All Night Long</h1>
+      <p class="hint">Scroll to begin <span>↓</span></p>
+    </div>
+  </div>
+
+  <!-- ISLAND -->
+  <div class="stage" data-scene="island">
+    <div class="shot view" id="shotBridge" data-in="0" data-out=".48" style="--ar:1600/1200">
+      <img src="img/bridge.jpg" alt="Pencil sketch of the Memorial Bridge over the Piscataqua River">
+      <span class="note fade" data-in=".1" data-out=".48" style="left:58%;top:86%">the Piscataqua River</span>
+      <span class="note fade" data-in=".2" data-out=".48" style="left:6%;top:12%">New Hampshire ↔ Maine</span>
+    </div>
+    <div class="shot view" id="shotIsland" data-in=".48" style="--ar:1600/1280">
+      <img src="img/island.jpg" alt="Pencil sketch of houses and boats on an island in the river">
+      <span class="note fade" data-in=".6" style="left:62%;top:9%">home, for a while</span>
+    </div>
+    <figure class="polaroid" data-in=".62">
+      <span class="polaroid-pic"><img src="img/cinder.jpg" alt="Pencil sketch of Cinder on the couch"></span>
+      <figcaption>Cinder Block<br><small>(real name: Sydney)</small></figcaption>
+    </figure>
+    <div class="cap" data-in=".04" data-out=".46">Before moving to Maine, I lived on an island between New Hampshire and Maine…</div>
+    <div class="cap" data-in=".52">…with my high school friend Sydney. <em>(For the purposes of this story, we'll call her Cinder Block.)</em></div>
+  </div>
+
+  <!-- SPIDERS EVERYWHERE -->
+  <div class="stage" data-scene="spiders">
+    <div class="shot view" id="shotBath" data-in="0" data-out=".38" style="--ar:1/1">
+      <img src="img/bathroom.jpg" alt="Pencil sketch of a corner sink in a wood-paneled bathroom">
+      <svg class="web" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="left:44%;top:-2%;width:32%;height:26%">
+        <g stroke="#4a4440" stroke-width=".5" fill="none" filter="url(#pencil)" vector-effect="non-scaling-stroke" opacity=".75">
+          <path d="M50 0 L50 100 M50 0 L5 70 M50 0 L95 70 M50 0 L0 25 M50 0 L100 25 M50 0 L25 100 M50 0 L75 100"/>
+          <path d="M38 12 Q50 22 62 12 M30 22 Q50 38 70 22 M22 34 Q50 54 78 34 M14 46 Q50 72 86 46 M8 60 Q50 90 92 60"/>
+        </g>
+      </svg>
+      <img class="bug" id="bathSpider" src="img/spider-a.png" alt="" style="--x:.6;--y:.12;--s:.07;--r:180deg">
+      <span class="note fade" data-in=".24" data-out=".38" style="left:8%;top:62%">the corner of the bathroom</span>
+    </div>
+    <div class="shot view" id="shotShoes" data-in=".38" data-out=".7" style="--ar:1600/1200">
+      <img src="img/shoes.jpg" alt="Pencil sketch of boots and sneakers on a shelf">
+      <img class="bug" id="shoeSpider" src="img/spider-b.png" alt="" style="--x:.2;--y:.6;--s:.07;--r:90deg">
+      <img class="bug" src="img/spider-c.png" alt="" style="--x:.72;--y:.36;--s:.06;--r:-30deg">
+      <span class="note fade" data-in=".42" data-out=".7" style="left:6%;top:88%">by our shoes</span>
+    </div>
+    <div class="shot view" id="shotSky" data-in=".7" style="--ar:1600/1067">
+      <img src="img/skylight.jpg" alt="Pencil sketch of a skylight in a sloped ceiling">
+      <img class="bug" src="img/spider-a.png" alt="" style="--x:.33;--y:.3;--s:.055;--r:140deg">
+      <img class="bug" src="img/spider-c.png" alt="" style="--x:.62;--y:.7;--s:.05;--r:-40deg">
+      <img class="bug" id="skySpider" src="img/spider-b.png" alt="" style="--x:.45;--y:.5;--s:.045;--r:60deg">
+      <span class="note fade" data-in=".78" style="left:64%;top:84%">…and the skylight</span>
+    </div>
+    <div class="counter" data-in=".2">spiders spotted: <b id="spCount">1</b></div>
+    <div class="cap" data-in=".02" data-out=".18">As spring turned into summer, Cinder and I started to notice something peculiar.</div>
+    <div class="cap shout" data-in=".2" data-out=".38">Spiders. Everywhere.</div>
+    <div class="cap" data-in=".42" data-out=".7">The corner of the bathroom. By our shoes.</div>
+    <div class="cap" data-in=".74">Making homes in the skylight.</div>
+  </div>
+
+  <!-- BED -->
+  <div class="stage" data-scene="bed">
+    <div class="shot" id="shotBed" style="--ar:1600/900">
+      <img src="img/bedroom.jpg" alt="Pencil sketch of a bedroom at night, the bedside lamp on">
+      <div class="lamp-glow" style="left:85%;top:50%"></div>
+      <img class="bug" id="bedSpider" src="img/spider-a.png" alt="" style="--x:.87;--y:.44;--s:.04;--r:0deg">
+      <div class="night-tint"></div>
+    </div>
+    <div class="blanket" id="bedBlanket" aria-hidden="true"></div>
+    <div class="scribble" id="bedScribble" aria-hidden="true"></div>
+    <div class="cap" data-in=".03" data-out=".28">One night, I had laid down in my bed…</div>
+    <div class="cap" data-in=".3" data-out=".56">…and saw a spider crawl up the wall next to me.</div>
+    <div class="cap shout" data-in=".58" data-out=".76">That was the final straw.</div>
+    <div class="cap" data-in=".8">I ripped off my blankets and stormed into our kitchen/living room…</div>
+  </div>
+
+  <!-- LIVING ROOM -->
+  <div class="stage" data-scene="living">
+    <div class="shot view" id="shotLiving" data-in="0" data-out=".14" style="--ar:1600/1067">
+      <img src="img/living.jpg" alt="Pencil sketch of a living room, a sofa facing the TV">
+      <div class="tv-glow" style="left:24.5%;top:43.5%;width:14.5%;height:8%"></div>
+    </div>
+    <div class="shot view" id="shotCinder" data-in=".14" style="--ar:1600/1067">
+      <img src="img/cinder.jpg" alt="Pencil sketch of Cinder on the couch under a blanket, turning to look">
+    </div>
+    <div class="cap" data-in="0" data-out=".12">…where Cinder was watching some show about vampires from the early 2010s.</div>
+    <div class="bubble" style="left:56%;top:18%" data-in=".16" data-out=".3">“Jen?”</div>
+    <div class="cap mini" data-in=".17" data-out=".3">Cinder turned around.</div>
+    <div class="bubble me" style="left:5%;top:22%" data-in=".32" data-out=".56">“That's enough.”</div>
+    <div class="cap mini" data-in=".34" data-out=".56">…I declared, in my sweatshirt, shorts, and slightly dirty shorts.</div>
+    <div class="cap mini" data-in=".58" data-out=".7">She turned her head.</div>
+    <div class="bubble me big" style="left:5%;top:14%" data-in=".72">“Let's get ’em.”</div>
+    <div class="cap mini" data-in=".74">I rallied her.</div>
+  </div>
+
+  <!-- ARMING UP -->
+  <div class="stage paper" data-scene="arm">
+    <div class="armory">
+      <figure class="arm-broom" id="armBroom">
+        <img src="img/broom.jpg" alt="Pencil sketch of a straw broom leaning on a wall">
+        <span class="tag">Dorota ♥</span>
+      </figure>
+      <figure class="arm-duster" id="armDuster">
+        <img src="img/duster.png" alt="Pencil sketch of a feather duster">
+        <span class="tag">(nameless)</span>
+      </figure>
+    </div>
+    <div class="cap shout" data-in=".03" data-out=".3">And with that, we armed ourselves.</div>
+    <div class="cap" data-in=".32" data-out=".6">Me, with our broom named <b>Dorota</b>…</div>
+    <div class="cap" data-in=".62">…and her with the duster, who remained nameless.</div>
+  </div>
+
+  <!-- DANCE PARTY -->
+  <div class="stage" data-scene="dance">
+    <div class="shot" id="shotDance" style="--ar:1600/1067">
+      <img src="img/living.jpg" alt="Pencil sketch of the living room during the dance party">
+      <div class="tv-glow" style="left:24.5%;top:43.5%;width:14.5%;height:8%"></div>
+      <div id="exSpiders">
+        <span class="evictee" data-from=".2 .78" data-to=".98 .74"><img class="bug" src="img/spider-a.png" alt="" style="--s:1;--r:90deg"><i class="suitcase"></i></span>
+        <span class="evictee" data-from=".42 .86" data-to=".99 .82"><img class="bug" src="img/spider-b.png" alt="" style="--s:1;--r:90deg"><i class="suitcase"></i></span>
+        <span class="evictee" data-from=".1 .55" data-to=".97 .6"><img class="bug" src="img/spider-c.png" alt="" style="--s:1;--r:90deg"><i class="suitcase"></i></span>
+        <span class="evictee" data-from=".6 .92" data-to=".99 .9"><img class="bug" src="img/spider-a.png" alt="" style="--s:1;--r:90deg"><i class="suitcase"></i></span>
+      </div>
+      <img class="bug" id="ceilSpider" src="img/spider-c.png" alt="" style="--x:.5;--y:.04;--s:.05;--r:90deg">
+      <span class="note fade" data-in=".2" style="left:86%;top:30%">exit →</span>
+    </div>
+    <div class="party"></div>
+    <img class="dance-duster" src="img/duster.png" alt="">
+    <div class="notes" aria-hidden="true"><span>♪</span><span>♫</span><span>♬</span></div>
+    <div class="cap" data-in=".03" data-out=".3">We turned on some eclectic dance music…</div>
+    <div class="cap" data-in=".32" data-out=".56">…and displaced the spiders from their home.</div>
+    <div class="cap mini" data-in=".6" data-out=".72">I yelled up to one on the ceiling:</div>
+    <div class="bubble me big" style="left:6%;top:30%" data-in=".72">“You are <em>so</em> done.”</div>
+  </div>
+
+  <!-- NIGHT 2 -->
+  <div class="stage" data-scene="night">
+    <div class="shot" id="shotNight" style="--ar:1600/900">
+      <img src="img/bedroom.jpg" alt="Pencil sketch of the bedroom in the dark">
+      <div class="eyes fade" data-in=".2" style="left:58%;top:14%"></div>
+      <div class="eyes fade" data-in=".34" style="left:42%;top:30%"></div>
+      <div class="eyes fade" data-in=".46" style="left:60%;top:52%"></div>
+      <div class="eyes fade" data-in=".56" style="left:41%;top:64%"></div>
+      <div class="eyes fade" data-in=".6" style="left:53%;top:6%"></div>
+      <div class="eyes fade" data-in=".64" style="left:46%;top:44%"></div>
+    </div>
+    <div class="blanket" id="nightBlanket" aria-hidden="true"></div>
+    <div class="dark-tint"></div>
+    <div class="thump" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="cap" data-in=".03" data-out=".2">When I finally climbed into my bed, I had an eerie feeling.</div>
+    <div class="cap" data-in=".22" data-out=".42">I knew they would come back with a vengeance…</div>
+    <div class="cap" data-in=".44" data-out=".64">…that the spiders were encouraged by our anger…</div>
+    <div class="cap" data-in=".66">…that our dubstep music had fueled their fire.</div>
+  </div>
+
+  <!-- MORNING AFTER -->
+  <div class="stage" data-scene="morning">
+    <div class="shot" id="shotMorning" style="--ar:1600/1047">
+      <img src="img/mess.jpg" alt="Pencil sketch of a couch buried in clothes and clutter">
+      <span class="sleeper" style="left:36%;top:44%"><img class="bug" src="img/spider-c.png" alt="" style="--s:1;--r:200deg"><i class="party-hat"></i><span class="zzz">z z z</span></span>
+      <span class="sleeper" style="left:70%;top:72%"><img class="bug" src="img/spider-a.png" alt="" style="--s:1;--r:-70deg"><span class="zzz">z z</span></span>
+      <span class="note fade" data-in=".05" style="left:6%;top:8%">the aftermath</span>
+    </div>
+    <div class="cap" data-in=".03" data-out=".38">The next morning, Cinder and I met in the living room, looking around at the mess in our apartment.</div>
+    <div class="quote" data-in=".42" data-out=".86"><span>“The spiders,”</span> we conferred, <span>“were clubbing all night long.”</span></div>
+    <div class="cap shout" data-in=".88">Your turn. Keep scrolling ↓</div>
+  </div>
+
+  <div class="paper-overlay"></div>
+</div>
+
+<!-- ============ SCROLL SPACERS ============ -->
+<main id="story">
+  <section class="scene" data-scene="intro" data-len="2"></section>
+  <section class="scene" data-scene="island" data-len="4"></section>
+  <section class="scene" data-scene="spiders" data-len="6"></section>
+  <section class="scene" data-scene="bed" data-len="5"></section>
+  <section class="scene" data-scene="living" data-len="6"></section>
+  <section class="scene" data-scene="arm" data-len="3"></section>
+  <section class="scene" data-scene="dance" data-len="5"></section>
+  <section class="scene" data-scene="night" data-len="4"></section>
+  <section class="scene" data-scene="morning" data-len="5"></section>
+</main>
+
+<!-- ============ THE GAME ============ -->
+<section id="game" aria-label="Spider game">
+  <div class="paper-overlay"></div>
+
+  <div class="g-screen g-choose active" id="gChoose">
+    <p class="kicker">The after-party · now through Jenny's eyes</p>
+    <h2>Step 1: Choose your appliance.</h2>
+    <p class="g-sub">They came back, and they brought friends. Walk through the apartment and swat as many spiders as you can in 60 seconds. They hide on the floors, the walls and the ceiling. Turn your sound up.</p>
+    <div class="weapons">
+      <button class="weapon" type="button" data-w="broom">
+        <span class="w-pic"><img src="img/broom.jpg" alt=""></span>
+        <strong>Dorota</strong><span>The broom. Wide sweep, slow swing.</span>
+      </button>
+      <button class="weapon" type="button" data-w="duster">
+        <span class="w-pic"><img src="img/duster.png" alt=""></span>
+        <strong>The Duster</strong><span>Still nameless. Short reach, lightning fast.</span>
+      </button>
+      <button class="weapon" type="button" data-w="slipper">
+        <span class="w-pic"><svg viewBox="0 0 100 100" filter="url(#pencil)"><g fill="none" stroke="#2f2a26" stroke-width="2.2" stroke-linecap="round"><ellipse cx="50" cy="52" rx="22" ry="38" transform="rotate(-20 50 52)"/><ellipse cx="50" cy="52" rx="17" ry="32" transform="rotate(-20 50 52)" stroke-width="1" opacity=".6"/><path d="M30 40 Q50 18 66 34"/><path d="M36 44 l26 -6 M40 56 l24 -6 M42 68 l20 -5" stroke-width="1" opacity=".5"/></g></svg></span>
+        <strong>The Flip-Flop</strong><span>A classic. Balanced in every way.</span>
+      </button>
+      <button class="weapon" type="button" data-w="vacuum">
+        <span class="w-pic"><svg viewBox="0 0 100 100" filter="url(#pencil)"><g fill="none" stroke="#2f2a26" stroke-width="2.2" stroke-linecap="round"><path d="M80 92 Q62 52 44 40"/><path d="M84 90 Q66 52 48 38" stroke-width="1" opacity=".6"/><rect x="16" y="30" width="36" height="16" rx="4" transform="rotate(-20 34 38)"/><circle cx="76" cy="80" r="13"/><path d="M70 74 l12 12 M68 80 l10 10" stroke-width="1" opacity=".5"/></g></svg></span>
+        <strong>The Vacuum</strong><span>Longest reach. Slow to recharge.</span>
+      </button>
+    </div>
+    <div class="controls" aria-label="Controls">
+      <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>or arrow keys: move and strafe</span></div>
+      <div><kbd>Shift</kbd><span>hold to run</span></div>
+      <div><kbd>Space</kbd><span>jump</span></div>
+      <div><kbd>Mouse</kbd><span>look around</span></div>
+      <div><kbd>Click</kbd><span>swing</span></div>
+      <div><kbd>Esc</kbd><span>pause</span></div>
+    </div>
+    <p class="g-note">Looking around is much easier with an external mouse than with a trackpad.</p>
+    <p class="g-note err" id="gLoadErr" hidden>The 3D engine didn't load, so the game can't start. Check your internet connection and reload the page.</p>
+  </div>
+
+  <div class="g-play" id="gPlay">
+    <div id="g3d"></div>
+    <div class="crosshair" id="crosshair"></div>
+    <div class="hud">
+      <div><small>score</small><b id="hScore">0</b></div>
+      <div><small>combo</small><b id="hCombo">×1</b></div>
+      <div><small>time</small><b id="hTime">60</b></div>
+      <div><small>loose</small><b id="hLoose">0</b></div>
+      <button class="mute" id="muteBtn" type="button">Sound on · M</button>
+    </div>
+    <div class="countdown" id="countdown"></div>
+    <div id="floaters"></div>
+    <p class="combo-note" id="comboNote"></p>
+    <p class="g-tip" id="gTip">Find the spiders. Put the circle on one and click to swing.</p>
+    <div class="pause" id="gPause" hidden><h2>Paused</h2><p>Click to keep swatting.</p></div>
+  </div>
+
+  <div class="g-screen g-over" id="gOver">
+    <p class="kicker">Lights on. Club's closed.</p>
+    <h2 id="oRank">—</h2>
+    <p class="big-score"><b id="oScore">0</b> points</p>
+    <p class="g-sub" id="oStats"></p>
+    <div class="g-actions">
+      <button class="btn" type="button" id="againBtn">Again!</button>
+      <button class="btn ghost" type="button" id="switchBtn">Switch appliance</button>
+      <button class="btn ghost" type="button" id="topBtn">Read the story again ↑</button>
+    </div>
+  </div>
+</section>
+
+<footer id="credits">
+  <details>
+    <summary>Picture credits</summary>
+    <p>Every drawing was traced from an openly licensed photo and turned into pencil. The originals:</p>
+    <ul>
+      <li>Memorial Bridge: <a href="https://commons.wikimedia.org/wiki/File:Memorial_Bridge_(Portsmouth,_New_Hampshire)_April_2016.JPG" target="_blank" rel="noopener">photo</a> by Ken Gallager at English Wikipedia, CC BY-SA 3.0</li>
+      <li>Island waterfront: <a href="https://commons.wikimedia.org/wiki/File:Boats_Piscataqua_River_Badger%27s_Island_Kittery_ME_April_2025.jpg" target="_blank" rel="noopener">photo</a> by Artaxerxes, CC BY 4.0</li>
+      <li>Bathroom corner: <a href="https://commons.wikimedia.org/wiki/File:Bathroom,_%E2%80%98Iolani_Palace,_King_Street,_Honolulu,_HI_-_52223129358.jpg" target="_blank" rel="noopener">photo</a> by w_lemay, CC BY-SA 2.0</li>
+      <li>Shoes: <a href="https://commons.wikimedia.org/wiki/File:Shoes_and_boots.jpg" target="_blank" rel="noopener">photo</a> by Adjoajo, CC BY-SA 4.0</li>
+      <li>Skylight: <a href="https://commons.wikimedia.org/wiki/File:Spring_Hall_Halifax_West_Yorks_2098.JPG" target="_blank" rel="noopener">photo</a> by Storye book, CC BY 3.0</li>
+      <li>Bedroom: <a href="https://commons.wikimedia.org/wiki/File:Hotel_room_bedroom_in_building_on_Chapel_Street,_Salford,_Greater_Manchester,_England,_on_5_October_2025.jpg" target="_blank" rel="noopener">photo</a> by MatthewHoobin, CC0</li>
+      <li>Living room: <a href="https://commons.wikimedia.org/wiki/File:Budapest_Apartment_(Unsplash).jpg" target="_blank" rel="noopener">photo</a> by Justin Schüler, CC0</li>
+      <li>Cinder on the couch: <a href="https://commons.wikimedia.org/wiki/File:Woman_sitting_on_a_couch_watching_television_while_covered_with_a_blanket.jpg" target="_blank" rel="noopener">photo</a> by Shixart1985, CC BY 2.0</li>
+      <li>Dorota: <a href="https://commons.wikimedia.org/wiki/File:Hue_Vietnam_Broom-in-C%C3%A0n-Th%C3%A0nh-Palace-01.jpg" target="_blank" rel="noopener">photo</a> by CEphoto, Uwe Aranas, CC BY-SA 3.0</li>
+      <li>The duster: <a href="https://commons.wikimedia.org/wiki/File:Ostrich_Feather_Duster_cropped.jpg" target="_blank" rel="noopener">photo</a> by freebie.photography, CC BY 3.0</li>
+      <li>The morning after: <a href="https://commons.wikimedia.org/wiki/File:Gfp-messy-couch.jpg" target="_blank" rel="noopener">photo</a> by Yinan Chen, public domain</li>
+      <li>House spiders: photos by <a href="https://commons.wikimedia.org/wiki/File:Tegenaria-domestica-chb.jpg" target="_blank" rel="noopener">Chb</a> (CC BY 3.0), <a href="https://commons.wikimedia.org/wiki/File:Barn_Funnel_Weaver_-_Tegenaria_domestica,_Woodbridge,_Virginia.jpg" target="_blank" rel="noopener">Judy Gallagher</a> (CC BY 2.0) and <a href="https://commons.wikimedia.org/wiki/File:Spider-2007-10-09.png" target="_blank" rel="noopener">Sanchom</a> (public domain)</li>
+    </ul>
+    <p>The pencil versions are adaptations and are shared under the same licenses as their originals.</p>
+  </details>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="story.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
