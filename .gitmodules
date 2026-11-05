@@ -1,0 +1,3 @@
+[submodule "stoplight-counter"]
+	path = stoplight-counter
+	url = https://github.com/jenniferlong568/stoplight-counter.git
