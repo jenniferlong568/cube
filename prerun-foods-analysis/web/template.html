@@ -1,0 +1,897 @@
+<title>Pre-Run Fuel Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a tool bar on top (find / describe / label + your log), then chart or rankings beside a sticky "race-bib" detail card. */
+:root {
+  --bg:#f2f5f3; --surface:#ffffff; --sunk:#e9eeeb; --ink:#16201b; --muted:#5b6962; --line:#dbe2de;
+  --accent:#e8590c; --accent-ink:#ffffff; --fits:#2f6fd6; --nofit:#a7b1ac; --mine:#c2255c; --minebg:#fbe3ec;
+  --good:#1f7a4d; --goodbg:#e0f2e8; --mid:#8a5a00; --midbg:#fbefd6; --bad:#a1262e; --badbg:#fbe3e4;
+  --c-carb:#3b82f6; --c-prot:#10b981; --c-fat:#f59e0b; --focus:#2f6fd6;
+  --display:"Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body:Inter, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#0f1412; --surface:#171e1b; --sunk:#1e2723; --ink:#e5ece8; --muted:#94a29b; --line:#2a3530;
+  --accent:#ff7a33; --accent-ink:#1a0d05; --fits:#5b93f0; --nofit:#56635d; --mine:#f06595; --minebg:#3a1a27;
+  --good:#5cd197; --goodbg:#163327; --mid:#f2c160; --midbg:#33290f; --bad:#ff8a8f; --badbg:#3b1a1d;
+  --c-carb:#5b93f0; --c-prot:#34d399; --c-fat:#fbbf24; --focus:#8bb4ff; color-scheme:dark; } }
+:root[data-theme="dark"] {
+  --bg:#0f1412; --surface:#171e1b; --sunk:#1e2723; --ink:#e5ece8; --muted:#94a29b; --line:#2a3530;
+  --accent:#ff7a33; --accent-ink:#1a0d05; --fits:#5b93f0; --nofit:#56635d; --mine:#f06595; --minebg:#3a1a27;
+  --good:#5cd197; --goodbg:#163327; --mid:#f2c160; --midbg:#33290f; --bad:#ff8a8f; --badbg:#3b1a1d;
+  --c-carb:#5b93f0; --c-prot:#34d399; --c-fat:#fbbf24; --focus:#8bb4ff; color-scheme:dark; }
+
+* { box-sizing:border-box; }
+[hidden] { display:none !important; }
+body { background:var(--bg); color:var(--ink); font-family:var(--body); font-size:14px; line-height:1.45; }
+.page { max-width:1320px; margin:0 auto; padding-block:20px 40px;
+        padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+        display:flex; flex-direction:column; gap:18px; }
+:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+button { font:inherit; color:inherit; }
+.num { font-family:var(--mono); font-variant-numeric:tabular-nums; }
+
+/* header */
+header.top { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:12px 24px; }
+.brand h1 { font-family:var(--display); font-weight:700; font-size:40px; line-height:1; margin:0; letter-spacing:.01em; text-transform:uppercase; text-wrap:balance; }
+.brand h1 span { color:var(--accent); }
+.brand p { margin:6px 0 0; color:var(--muted); max-width:62ch; }
+.views { display:flex; gap:4px; background:var(--sunk); padding:4px; border-radius:999px; }
+.views a { text-decoration:none; color:var(--muted); padding:7px 16px; border-radius:999px; font-weight:600; }
+.views a[aria-current="page"] { background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+
+.card { background:var(--surface); border:1px solid var(--line); border-radius:10px; }
+
+/* checker */
+.checker { padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+.modes { display:flex; flex-wrap:wrap; gap:6px; }
+.modes button { padding:6px 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); cursor:pointer; font-weight:500; }
+.modes button[aria-selected="true"] { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.field { position:relative; max-width:620px; }
+input[type=text], input[type=number], select { font:inherit; padding:9px 11px; border:1px solid var(--line); border-radius:7px; width:100%; background:var(--bg); color:var(--ink); }
+input:focus, select:focus { outline:2px solid var(--focus); outline-offset:0; }
+.results { list-style:none; margin:4px 0 0; padding:4px 0; position:absolute; z-index:20; left:0; right:0; background:var(--surface);
+           border:1px solid var(--line); border-radius:8px; box-shadow:0 10px 24px rgba(0,0,0,.14); max-height:320px; overflow:auto; }
+.results li { padding:8px 11px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
+.results li[aria-selected="true"], .results li:hover { background:var(--sunk); }
+.results small { color:var(--muted); white-space:nowrap; }
+.results .none { color:var(--muted); cursor:default; }
+.row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.row .grow { flex:1 1 280px; min-width:0; }
+.btn { padding:9px 16px; border-radius:7px; border:0; background:var(--accent); color:var(--accent-ink); font-weight:700; cursor:pointer; white-space:nowrap; }
+.btn:disabled { opacity:.55; cursor:progress; }
+.btn.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); font-weight:500; }
+.btn.btn-sm { padding:5px 11px; font-size:13px; }
+.help { color:var(--muted); margin:0; font-size:13px; }
+form.label { display:grid; grid-template-columns:repeat(auto-fill, minmax(128px, 1fr)); gap:10px 12px; align-items:end; }
+form.label label { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); font-weight:500; }
+form.label .wide { grid-column:1 / -1; max-width:620px; }
+.banner { background:var(--sunk); border-radius:8px; padding:10px 12px; font-size:13px; }
+.banner b { color:var(--ink); }
+.msg { margin:0; font-size:13px; min-height:1em; }
+.msg.err { color:var(--bad); }
+
+.log { border-top:1px solid var(--line); padding-top:12px; display:flex; flex-direction:column; gap:8px; }
+.log-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; }
+.eyebrow { font-size:11px; letter-spacing:.08em; text-transform:uppercase; font-weight:700; color:var(--muted); margin:0; }
+.where { font-size:12px; color:var(--muted); }
+.chips { margin:0; padding:0; list-style:none; display:flex; flex-wrap:wrap; gap:8px; }
+.chip { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:999px; padding:3px 4px 3px 11px; cursor:pointer; background:var(--surface); }
+.chip:hover { border-color:var(--muted); }
+.chip .sc { font-family:var(--mono); font-weight:700; font-size:12px; padding:1px 7px; border-radius:999px; }
+.chip .x { border:0; background:none; color:var(--muted); cursor:pointer; font-size:16px; line-height:1; padding:2px 7px; border-radius:999px; }
+.chip .x:hover { background:var(--sunk); color:var(--ink); }
+.t-good { background:var(--goodbg); color:var(--good); } .t-mid { background:var(--midbg); color:var(--mid); } .t-bad { background:var(--badbg); color:var(--bad); }
+.empty { color:var(--muted); margin:0; }
+.confirm { display:inline-flex; gap:6px; align-items:center; font-size:13px; }
+
+/* main grid */
+.main { display:grid; grid-template-columns:minmax(0, 1fr) 340px; gap:18px; align-items:start; }
+@media (max-width: 920px) { .main { grid-template-columns:minmax(0, 1fr); } aside.detail { position:static; } }
+.view { min-width:0; }
+
+/* chart */
+.chart { padding:16px 8px 8px 8px; }
+.chart-head { padding:0 10px 6px; display:flex; flex-direction:column; gap:6px; }
+.chart-head h2, .rank-head h2 { font-family:var(--display); font-weight:700; font-size:24px; margin:0; text-transform:uppercase; letter-spacing:.01em; }
+.chart-head p { margin:0; color:var(--muted); }
+.legend-row { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; }
+.legend-row span { display:inline-flex; align-items:center; gap:6px; }
+.sw { width:10px; height:10px; border-radius:50%; display:inline-block; }
+.sw.line { width:22px; height:0; border-top:2px dashed var(--accent); border-radius:0; }
+.sw.dia { width:10px; height:10px; background:var(--mine); transform:rotate(45deg); border-radius:1px; }
+svg.plot { width:100%; height:auto; display:block; }
+.plotwrap { overflow-x:auto; }
+@media (max-width: 640px) { svg.plot { min-width:620px; } }
+.grid line { stroke:var(--line); }
+.tick { fill:var(--muted); font-size:12px; font-family:var(--body); }
+.axis-t { fill:var(--ink); font-size:13px; font-family:var(--body); }
+.guide { stroke:var(--accent); stroke-width:2; stroke-dasharray:6 4; fill:none; }
+.dot { cursor:pointer; stroke:var(--surface); stroke-width:.8; }
+.dot.fit { fill:var(--fits); fill-opacity:.75; } .dot.no { fill:var(--nofit); fill-opacity:.8; }
+.dot.big { stroke:var(--ink); stroke-width:1.2; fill-opacity:.95; }
+.dot:hover { stroke:var(--ink); stroke-width:2; }
+.lbl { font-size:12px; font-weight:600; fill:var(--ink); stroke:var(--surface); stroke-width:3.5px; paint-order:stroke; stroke-linejoin:round; cursor:pointer; font-family:var(--body); }
+.leader { stroke:var(--muted); stroke-width:.8; }
+.mine-d { fill:var(--mine); stroke:var(--surface); stroke-width:1.5; cursor:pointer; }
+.mine-o { fill:none; stroke:var(--mine); stroke-width:2.2; pointer-events:none; }
+.mine-t { fill:var(--mine); font-weight:700; font-size:12px; stroke:var(--surface); stroke-width:3px; paint-order:stroke; pointer-events:none; font-family:var(--body); }
+.reft { fill:var(--accent); font-size:11px; font-weight:700; font-family:var(--body); stroke:var(--surface); stroke-width:3px; paint-order:stroke; }
+.axes { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; }
+.axes label { font-size:12px; font-weight:600; color:var(--muted); }
+.axes select { width:auto; padding:6px 9px; }
+.swap { border:1px solid var(--line); background:var(--surface); border-radius:7px; padding:5px 10px; cursor:pointer; font-size:15px; line-height:1; }
+.swap:hover { border-color:var(--muted); }
+.presets { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.presets button { border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:4px 11px; cursor:pointer; font-size:12px; font-weight:500; }
+.presets button[aria-pressed="true"] { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.ring { fill:none; stroke:var(--accent); stroke-width:2.5; pointer-events:none; }
+.plot.f-fit .is-no, .plot.f-no .is-fit { display:none; }
+.seg { display:inline-flex; flex-wrap:wrap; gap:4px; background:var(--sunk); padding:4px; border-radius:999px; align-self:flex-start; }
+.seg button { border:0; background:none; padding:6px 13px; border-radius:999px; cursor:pointer; color:var(--muted); font-weight:600; font-size:13px; }
+.seg button[aria-pressed="true"] { background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+.seg-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
+.src { font-size:12px; color:var(--muted); margin:6px 10px 4px; }
+
+/* rankings */
+.rank { padding:16px 0 4px; }
+.rank-head { padding:0 16px 10px; display:flex; flex-direction:column; gap:10px; }
+.filters { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; }
+.filters input[type=text] { max-width:260px; }
+.filters select { width:auto; }
+.filters label.ck { display:inline-flex; gap:6px; align-items:center; font-size:13px; cursor:pointer; }
+.tablewrap { overflow-x:auto; max-height:72vh; overflow-y:auto; border-top:1px solid var(--line); }
+table.rt { width:100%; border-collapse:collapse; font-size:13px; }
+table.rt th { position:sticky; top:0; background:var(--surface); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted);
+              padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; z-index:1; }
+table.rt th.n, table.rt td.n { text-align:right; }
+table.rt th button { all:unset; cursor:pointer; }
+table.rt th button:focus-visible { outline:2px solid var(--focus); }
+table.rt td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+table.rt td.n { font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; }
+table.rt tbody tr { cursor:pointer; }
+table.rt tbody tr:hover { background:var(--sunk); }
+table.rt tr.is-mine td:first-child { box-shadow:inset 3px 0 0 var(--mine); }
+table.rt tr.sel { background:var(--sunk); }
+.fname { max-width:380px; }
+.fname small { display:block; color:var(--muted); }
+.sbar { display:flex; align-items:center; gap:8px; min-width:110px; }
+.sbar i { display:block; height:6px; border-radius:3px; background:var(--sunk); flex:1; position:relative; overflow:hidden; }
+.sbar i b { position:absolute; inset:0 auto 0 0; border-radius:3px; }
+.yes { color:var(--fits); font-weight:700; } .no { color:var(--muted); }
+.youtag { font-size:10px; font-weight:700; color:var(--mine); background:var(--minebg); border-radius:999px; padding:1px 7px; margin-left:6px; text-transform:uppercase; letter-spacing:.05em; }
+
+/* detail card */
+aside.detail { position:sticky; top:calc(env(safe-area-inset-top, 0px) + 16px); padding:18px; display:flex; flex-direction:column; gap:12px; }
+aside.detail h2 { margin:0; font-family:var(--display); font-weight:700; font-size:26px; line-height:1.05; text-transform:uppercase; text-wrap:balance; }
+.sub { color:var(--muted); margin:0; font-size:13px; }
+.pills { display:flex; flex-wrap:wrap; gap:6px; }
+.pill { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600; }
+.pill.yes { background:color-mix(in srgb, var(--fits) 16%, transparent); color:var(--fits); }
+.pill.no { background:var(--sunk); color:var(--muted); }
+.pill.you { background:var(--minebg); color:var(--mine); }
+.pill.ai { background:var(--sunk); color:var(--ink); }
+.bib { display:flex; gap:14px; align-items:center; padding:12px 14px; border-radius:9px; }
+.bib .big { font-family:var(--display); font-size:52px; font-weight:700; line-height:.9; font-variant-numeric:tabular-nums; }
+.bib .big small { font-size:16px; }
+.bib .verdict { font-weight:700; font-size:15px; }
+.bib .rk { font-size:12px; color:var(--ink); }
+.checks { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:3px; }
+.checks li { display:grid; grid-template-columns:16px 1fr auto; gap:8px; font-size:13px; }
+.checks .ok { color:var(--good); font-weight:700; } .checks .miss { color:var(--bad); font-weight:700; }
+.checks .v { color:var(--muted); font-family:var(--mono); font-size:12px; }
+table.nut { width:100%; border-collapse:collapse; font-size:13px; }
+table.nut td { padding:5px 0; border-bottom:1px solid var(--line); }
+table.nut td:last-child { text-align:right; font-family:var(--mono); font-weight:500; }
+.mix { display:flex; height:10px; border-radius:5px; overflow:hidden; background:var(--sunk); }
+.mix span:nth-child(1) { background:var(--c-carb); } .mix span:nth-child(2) { background:var(--c-prot); } .mix span:nth-child(3) { background:var(--c-fat); }
+.small { font-size:12px; color:var(--muted); margin:0; }
+.near button { border:0; background:none; color:var(--fits); padding:0; cursor:pointer; text-decoration:underline; font-size:12px; }
+details.how { font-size:12px; color:var(--muted); }
+details.how summary { cursor:pointer; color:var(--ink); }
+a { color:var(--fits); }
+
+@media (max-width: 520px) {
+  .brand h1 { font-size:32px; }
+  .bib .big { font-size:44px; }
+  .hide-sm { display:none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <h1>Pre-Run <span>Fuel</span> Check</h1>
+      <p>Look up what you’re about to eat, or describe it, and see how it scores as fuel before a run: lots of carbs, little fat, fiber and protein. Ranked against <span class="num" id="n-foods">432</span> USDA foods.</p>
+    </div>
+    <nav class="views" aria-label="View">
+      <a href="#chart" id="v-chart" aria-current="page">Chart</a>
+      <a href="#rankings" id="v-rankings">Rankings</a>
+    </nav>
+  </header>
+
+  <section class="card checker" aria-label="Check a food">
+    <div class="modes" role="tablist" aria-label="How to add a food">
+      <button type="button" role="tab" id="m-search" aria-selected="true" aria-controls="p-search">Search USDA foods</button>
+      <button type="button" role="tab" id="m-describe" aria-selected="false" aria-controls="p-describe" hidden>Describe it</button>
+      <button type="button" role="tab" id="m-label" aria-selected="false" aria-controls="p-label">Nutrition label</button>
+    </div>
+
+    <div id="p-search" role="tabpanel" aria-labelledby="m-search">
+      <div class="field">
+        <input id="q" type="text" placeholder="Try “banana”, “bagel”, “peanut butter”…" autocomplete="off"
+               role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list" aria-label="Search USDA foods">
+        <ul id="results" class="results" role="listbox" hidden></ul>
+      </div>
+    </div>
+
+    <div id="p-describe" role="tabpanel" aria-labelledby="m-describe" hidden>
+      <form id="describe-form" class="row">
+        <input class="grow" id="describe" type="text" placeholder="e.g. 2 slices of white toast with honey, or a Clif Bar" autocomplete="off" aria-label="Describe what you ate">
+        <button class="btn" type="submit" id="describe-go">Estimate</button>
+      </form>
+      <p class="help">Claude estimates the nutrition. You’ll see the numbers before anything is added.</p>
+      <p class="msg" id="describe-msg" role="status"></p>
+    </div>
+
+    <div id="p-label" role="tabpanel" aria-labelledby="m-label" hidden>
+      <div class="banner" id="est-banner" hidden></div>
+      <form class="label" id="label-form" novalidate>
+        <label class="wide">Food name<input type="text" id="f-name" name="name" placeholder="e.g. Honey Stinger waffle"></label>
+        <label>Serving size (g)<input type="number" id="f-grams" name="grams" min="1" step="any" value="100"></label>
+        <label>Calories<input type="number" id="f-kcal" name="kcal" min="1" step="any"></label>
+        <label>Total carbs (g)<input type="number" id="f-carbs" name="carbs" min="0" step="any"></label>
+        <label>Fiber (g)<input type="number" id="f-fiber" name="fiber" min="0" step="any"></label>
+        <label>Protein (g)<input type="number" id="f-protein" name="protein" min="0" step="any"></label>
+        <label>Fat (g)<input type="number" id="f-fat" name="fat" min="0" step="any"></label>
+        <label>Sugar (g, optional)<input type="number" id="f-sugar" name="sugar" min="0" step="any"></label>
+        <div><button class="btn" type="submit">Add to my foods</button></div>
+      </form>
+      <p class="msg err" id="form-err" role="alert"></p>
+    </div>
+
+    <div class="log">
+      <div class="log-head">
+        <p class="eyebrow">My foods · best pre-run pick first</p>
+        <span class="row"><span class="where" id="where">Saved in this browser</span>
+          <button type="button" class="btn ghost btn-sm" id="clear" hidden>Clear all</button>
+          <span class="confirm" id="clear-confirm" hidden>Remove all? <button type="button" class="btn btn-sm" id="clear-yes">Remove</button>
+            <button type="button" class="btn ghost btn-sm" id="clear-no">Keep</button></span></span>
+      </div>
+      <ul class="chips" id="chips"></ul>
+      <p class="empty" id="chips-empty">Nothing logged yet. Search a food above, or click any dot and choose “Add to my foods”.</p>
+    </div>
+  </section>
+
+  <div class="main">
+    <div class="view" id="view-chart">
+      <section class="card chart" aria-label="Fiber versus calories chart">
+        <div class="chart-head">
+          <h2 id="chart-title">Fiber vs calories</h2>
+          <p id="chart-sub">Per 100 g. Every food that fits the pre-run rule sits on or below the dashed line (3 g fiber per 100 kcal).</p>
+          <div class="axes">
+            <label for="ax-y">Up the side (Y)</label><select id="ax-y"></select>
+            <label for="ax-x">Along the bottom (X)</label><select id="ax-x"></select>
+            <button type="button" class="swap" id="ax-swap" aria-label="Swap axes" title="Swap axes">⇄</button>
+          </div>
+          <div class="presets" role="group" aria-label="Quick views"><span class="eyebrow">Quick views</span></div>
+          <div class="legend-row">
+            <span><i class="sw" style="background:var(--fits)"></i>Fits rule (<b id="n-fit"></b>)</span>
+            <span><i class="sw" style="background:var(--nofit)"></i>Doesn’t fit (<b id="n-no"></b>)</span>
+            <span id="legend-guide"><i class="sw line"></i><span id="legend-guide-t">3 g fiber / 100 kcal</span></span>
+            <span><i class="sw dia"></i>My foods</span>
+          </div>
+          <div class="seg-row"><span class="eyebrow">Show</span>
+            <div class="seg" role="group" aria-label="Show foods">
+              <button type="button" data-fit="all" aria-pressed="true">All foods</button>
+              <button type="button" data-fit="fit" aria-pressed="false">Fits pre-run rule</button>
+              <button type="button" data-fit="no" aria-pressed="false">Doesn’t fit</button>
+            </div><span class="small" id="fit-count"></span></div>
+        </div>
+        <div class="plotwrap"><svg class="plot" id="plot" viewBox="0 0 960 560" role="img" aria-label="Scatter chart of fiber versus calories per 100 grams"></svg></div>
+        <p class="src">Source: USDA FoodData Central (SR Legacy). Foods with no fiber or calorie value are left out. Click any dot for details.</p>
+      </section>
+    </div>
+
+    <div class="view" id="view-rankings" hidden>
+      <section class="card rank" aria-label="Rankings">
+        <div class="rank-head">
+          <h2>Rankings</h2>
+          <div class="filters">
+            <input type="text" id="rf-q" placeholder="Filter by name" aria-label="Filter by name">
+            <select id="rf-group" aria-label="Food group"><option value="">All groups</option></select>
+            <select id="rf-fit" aria-label="Pre-run rule"><option value="all">Fits and doesn’t fit</option><option value="fit">Fits pre-run rule</option><option value="no">Doesn’t fit</option></select>
+            <label class="ck"><input type="checkbox" id="rf-mine"> My foods only</label>
+            <span class="small" id="rf-count"></span>
+          </div>
+        </div>
+        <div class="tablewrap">
+          <table class="rt">
+            <thead><tr>
+              <th class="n">#</th><th>Food</th><th><button type="button" data-sort="score">Score ▾</button></th>
+              <th class="n"><button type="button" data-sort="kcal">kcal</button></th>
+              <th class="n"><button type="button" data-sort="f100">Fiber/100 kcal</button></th>
+              <th class="n hide-sm"><button type="button" data-sort="pc">Carbs %</button></th>
+              <th class="n hide-sm"><button type="button" data-sort="pf">Fat %</button></th>
+              <th>Fits</th>
+            </tr></thead>
+            <tbody id="rt-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <aside class="card detail" id="detail" aria-live="polite"></aside>
+  </div>
+</div>
+
+<script>
+const FOODS = __FOODS__;
+const RULE = { minCarb: 60, maxFat: 20, maxProtein: 30, maxFiber: 3 };
+const LABELS = __LABELS__;
+const LOCAL_KEY = 'prerun-fuel-log-v1';
+
+// ---------------- scoring ----------------
+const clamp01 = v => Math.max(0, Math.min(1, v));
+function score(d) {
+  if (![d.pc, d.pf, d.f100].every(Number.isFinite)) return null;
+  const carbs = clamp01((d.pc - 40) / 40), fat = clamp01(1 - d.pf / 40), fiber = clamp01(1 - d.f100 / (2 * RULE.maxFiber));
+  return Math.round(100 * (0.4 * carbs + 0.3 * fat + 0.3 * fiber));
+}
+const passes = d => d.pc >= RULE.minCarb && d.pf <= RULE.maxFat && d.pp <= RULE.maxProtein && d.f100 <= RULE.maxFiber;
+const tier = s => s >= 80 ? ['good', 'Great pre-run pick'] : s >= 60 ? ['mid', 'OK before a run'] : ['bad', 'Better after the run'];
+FOODS.forEach(d => { d.score = score(d); d.fits = passes(d); });
+const BY_FDC = new Map(FOODS.map(d => [d.fdc, d]));
+LABELS.forEach(([fdc, label]) => { const d = BY_FDC.get(fdc); if (d) d.label = label; });
+const RANKED = [...FOODS].sort((a, b) => b.score - a.score);
+const rankOf = s => 1 + RANKED.filter(o => o.score > s).length;
+
+// ---------------- helpers ----------------
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const SVGNS = 'http://www.w3.org/2000/svg';
+const sv = (tag, attrs = {}, cls) => { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (cls) e.setAttribute('class', cls); return e; };
+const fmt = (v, unit = '') => v == null || !Number.isFinite(v) ? '—' : (Math.round(v * 10) / 10) + unit;
+const shortName = n => { const s = n.replace(/\s*\([^)]*\)/g, ''); return s.length > 38 ? s.slice(0, 37).replace(/[ ,]+$/, '') + '…' : s; };
+const nameOf = d => d.label || shortName(d.name);
+
+// ---------------- my foods (per-serving values kept, per-100 g derived) ----------------
+function fromEntry(e) {
+  if (e.kind === 'usda') { const d = BY_FDC.get(String(e.fdc)); return d ? { ...d, entryId: e.id, mine: true, usda: true } : null; }
+  const n = k => { if (e[k] == null || e[k] === '') return null; const v = Number(e[k]); return Number.isFinite(v) && v >= 0 ? v : null; };
+  const g = n('grams'), kcal = n('kcal');
+  if (!g || !kcal || !String(e.name || '').trim()) return null;
+  const v = { carbs: n('carbs') ?? 0, fiber: n('fiber') ?? 0, protein: n('protein') ?? 0, fat: n('fat') ?? 0, sugar: n('sugar') };
+  const k = 100 / g;
+  const d = {
+    entryId: e.id, mine: true, usda: false, source: e.source === 'claude' ? 'claude' : 'label', note: typeof e.note === 'string' ? e.note.slice(0, 300) : '',
+    name: String(e.name).slice(0, 80), group: null, grams: g, servingKcal: kcal,
+    kcal: kcal * k, carbs: v.carbs * k, fiber: v.fiber * k, protein: v.protein * k, fat: v.fat * k, sugar: v.sugar == null ? null : v.sugar * k,
+    pc: v.carbs * 4 / kcal * 100, pp: v.protein * 4 / kcal * 100, pf: v.fat * 9 / kcal * 100, f100: v.fiber / kcal * 100,
+  };
+  d.score = score(d); d.fits = passes(d);
+  return d;
+}
+let entries = [];          // raw stored entries
+let mine = [];             // derived food records
+const store = {
+  mode: 'local', col: null,
+  loadLocal() { try { const v = JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } },
+  saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(entries)); } catch (e) {} },
+  async add(e) {
+    e.addedAt = Date.now();
+    if (this.mode === 'db') { const ref = this.col.doc(); e.id = ref.id; await ref.set(e); return; }
+    e.id = 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    entries.push(e); this.saveLocal(); refreshMine();
+  },
+  async remove(id) {
+    if (this.mode === 'db') { await this.col.doc(id).delete(); return; }
+    entries = entries.filter(e => e.id !== id); this.saveLocal(); refreshMine();
+  },
+  async clear() {
+    if (this.mode === 'db') { for (const e of [...entries]) await this.col.doc(e.id).delete(); return; }
+    entries = []; this.saveLocal(); refreshMine();
+  },
+};
+function refreshMine() {
+  mine = entries.map(fromEntry).filter(Boolean).sort((a, b) => b.score - a.score);
+  renderChips(); renderMineOnChart(); if (currentView === 'rankings') renderTable();
+  if (selected && selected.mine && !mine.some(m => m.entryId === selected.entryId)) show(BY_FDC.get(selected.fdc) || defaultFood());
+  else if (selected) show(selected.mine ? mine.find(m => m.entryId === selected.entryId) : selected, false);
+}
+
+function renderChips() {
+  const ul = $('chips'); ul.replaceChildren();
+  mine.forEach(m => {
+    const li = el('li'), chip = el('span', 'chip');
+    chip.tabIndex = 0; chip.setAttribute('role', 'button');
+    const [t] = tier(m.score);
+    chip.append(el('span', '', nameOf(m)), el('span', 'sc t-' + t, String(m.score)));
+    const x = el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + nameOf(m));
+    x.addEventListener('click', ev => { ev.stopPropagation(); store.remove(m.entryId).catch(err => flash(err)); });
+    chip.append(x);
+    chip.addEventListener('click', () => show(m));
+    chip.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); show(m); } });
+    li.append(chip); ul.append(li);
+  });
+  $('chips-empty').hidden = mine.length > 0;
+  $('clear').hidden = mine.length === 0 || !$('clear-confirm').hidden;
+}
+$('clear').addEventListener('click', () => { $('clear').hidden = true; $('clear-confirm').hidden = false; });
+$('clear-no').addEventListener('click', () => { $('clear-confirm').hidden = true; $('clear').hidden = mine.length === 0; });
+$('clear-yes').addEventListener('click', () => { $('clear-confirm').hidden = true; store.clear().catch(err => flash(err)); });
+function flash(err) { $('where').textContent = 'Couldn’t save: ' + (err && err.message || 'try again'); }
+
+// ---------------- chart (any two measures) ----------------
+const AXES = {
+  score:  { name: 'Pre-run score', unit: '0–100', short: 'score', refs: [[60, 'OK before a run'], [80, 'Great pre-run pick']], fixedMax: 100 },
+  kcal:   { name: 'Calories', unit: 'kcal per 100 g', short: 'kcal' },
+  fiber:  { name: 'Fiber', unit: 'g per 100 g', short: 'g fiber' },
+  f100:   { name: 'Fiber per 100 kcal', unit: 'g', short: 'g fiber/100 kcal', refs: [[RULE.maxFiber, 'Rule limit']] },
+  pc:     { name: 'Carbs', unit: '% of calories', short: '% carbs', refs: [[RULE.minCarb, 'Rule minimum']] },
+  pf:     { name: 'Fat', unit: '% of calories', short: '% fat', refs: [[RULE.maxFat, 'Rule limit']] },
+  pp:     { name: 'Protein', unit: '% of calories', short: '% protein', refs: [[RULE.maxProtein, 'Rule limit']] },
+  sugar:  { name: 'Sugar', unit: 'g per 100 g', short: 'g sugar' },
+  carbs:  { name: 'Carbs', unit: 'g per 100 g', short: 'g carbs' },
+  protein:{ name: 'Protein', unit: 'g per 100 g', short: 'g protein' },
+  fat:    { name: 'Fat', unit: 'g per 100 g', short: 'g fat' },
+};
+const PRESETS = [['kcal', 'fiber', 'Fiber vs calories'], ['kcal', 'score', 'Score vs calories'], ['pc', 'pf', 'Fat % vs carbs %'], ['f100', 'score', 'Score vs fiber density']];
+const AX_KEY = 'prerun-fuel-axes';
+let xKey = 'kcal', yKey = 'fiber';
+const W = 960, H = 560, L = 62, R = 24, T = 16, B = 56;
+let xMax = 1, yMax = 1;
+const val = (d, k) => { const v = d[k]; return v == null || !Number.isFinite(v) ? null : v; };
+const xs = v => L + Math.max(0, Math.min(v, xMax)) / xMax * (W - L - R);
+const ys = v => H - B - Math.max(0, Math.min(v, yMax)) / yMax * (H - T - B);
+const pos = d => { const x = val(d, xKey), y = val(d, yKey); return x == null || y == null ? null : { x: xs(x), y: ys(y), off: x > xMax || y > yMax }; };
+function niceStep(max, target = 8) {
+  const raw = max / target, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  return [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw) || 10 * mag;
+}
+function domain(k) {
+  if (AXES[k].fixedMax) return { max: AXES[k].fixedMax, step: AXES[k].fixedMax / 5 };
+  const m = Math.max(...FOODS.map(d => val(d, k)).filter(v => v != null), ...(AXES[k].refs || []).map(r => r[0]));
+  const step = niceStep(m); return { max: step * Math.ceil(m / step), step };
+}
+const tickLabel = v => Number.isInteger(v) ? String(v) : String(Math.round(v * 10) / 10);
+const plot = $('plot');
+const mineLayer = sv('g');
+const ring = sv('circle', { r: 11, visibility: 'hidden' }, 'ring');
+const axisTitle = k => `${AXES[k].name} (${AXES[k].unit})`;
+
+function drawChart() {
+  plot.replaceChildren();
+  const dx = domain(xKey), dy = domain(yKey); xMax = dx.max; yMax = dy.max;
+  const grid = sv('g', {}, 'grid');
+  for (let t = 0; t <= xMax + 1e-9; t += dx.step) {
+    grid.append(sv('line', { x1: xs(t), y1: T, x2: xs(t), y2: H - B }));
+    const tx = sv('text', { x: xs(t), y: H - B + 20, 'text-anchor': 'middle' }, 'tick'); tx.textContent = tickLabel(t); plot.append(tx);
+  }
+  for (let t = 0; t <= yMax + 1e-9; t += dy.step) {
+    grid.append(sv('line', { x1: L, y1: ys(t), x2: W - R, y2: ys(t) }));
+    const tx = sv('text', { x: L - 10, y: ys(t) + 4, 'text-anchor': 'end' }, 'tick'); tx.textContent = tickLabel(t); plot.append(tx);
+  }
+  plot.prepend(grid);
+  const xt = sv('text', { x: (L + W - R) / 2, y: H - 12, 'text-anchor': 'middle' }, 'axis-t'); xt.textContent = axisTitle(xKey);
+  const yt = sv('text', { transform: `translate(18 ${(T + H - B) / 2}) rotate(-90)`, 'text-anchor': 'middle' }, 'axis-t'); yt.textContent = axisTitle(yKey);
+  plot.append(xt, yt);
+
+  // reference lines: the rule's limits and the score cutoffs
+  let refCount = 0;
+  if (xKey === 'kcal' && yKey === 'fiber') {
+    const gEnd = Math.min(xMax, yMax / RULE.maxFiber * 100);
+    plot.append(sv('line', { x1: xs(0), y1: ys(0), x2: xs(gEnd), y2: ys(gEnd * RULE.maxFiber / 100) }, 'guide')); refCount++;
+  } else if (xKey === 'fiber' && yKey === 'kcal') {
+    const gEnd = Math.min(yMax, xMax / RULE.maxFiber * 100);
+    plot.append(sv('line', { x1: xs(0), y1: ys(0), x2: xs(gEnd * RULE.maxFiber / 100), y2: ys(gEnd) }, 'guide')); refCount++;
+  }
+  (AXES[xKey].refs || []).forEach(([v, label]) => {
+    if (v > xMax) return; refCount++;
+    plot.append(sv('line', { x1: xs(v), y1: T, x2: xs(v), y2: H - B }, 'guide'));
+    const t = sv('text', { x: xs(v) + 5, y: T + 12 }, 'reft'); t.textContent = label; plot.append(t);
+  });
+  (AXES[yKey].refs || []).forEach(([v, label]) => {
+    if (v > yMax) return; refCount++;
+    plot.append(sv('line', { x1: L, y1: ys(v), x2: W - R, y2: ys(v) }, 'guide'));
+    const t = sv('text', { x: W - R - 4, y: ys(v) - 6, 'text-anchor': 'end' }, 'reft'); t.textContent = label; plot.append(t);
+  });
+
+  const dots = sv('g');
+  let missing = 0;
+  FOODS.forEach(d => { d._p = pos(d); if (!d._p) missing++; });
+  [...FOODS].filter(d => d._p).sort((a, b) => (a.fits - b.fits) || (!!a.label - !!b.label)).forEach(d => {
+    const c = sv('circle', { cx: d._p.x.toFixed(1), cy: d._p.y.toFixed(1), r: d.label ? 5.5 : 4.5 }, 'dot ' + (d.fits ? 'fit' : 'no') + (d.label ? ' big' : '') + ' ' + isCls(d));
+    const t = sv('title'); t.textContent = `${d.name}: ${fmt(val(d, xKey))} ${AXES[xKey].short}, ${fmt(val(d, yKey))} ${AXES[yKey].short} · score ${d.score}`; c.append(t);
+    c.addEventListener('click', () => show(d));
+    dots.append(c);
+  });
+  plot.append(dots);
+
+  // greedy label placement, avoiding other labels and labelled dots
+  const labelled = FOODS.filter(d => d.label && d._p).sort((a, b) => a._p.y - b._p.y);
+  const boxes = labelled.map(d => [d._p.x - 6, d._p.y - 6, d._p.x + 6, d._p.y + 6]);
+  const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+  const labels = sv('g');
+  labelled.forEach(d => {
+    const w = d.label.length * 6.8, px = d._p.x, py = d._p.y;
+    let best = null;
+    outer: for (const dist of [10, 22, 36, 52, 70, 90]) {
+      for (const [ddx, ddy] of [[1, 0], [-1, 0], [0, -1], [0, 1], [1, -1], [-1, -1], [1, 1], [-1, 1]]) {
+        const lx = px + ddx * dist + (ddx >= 0 ? 0 : -w) + (ddx === 0 ? -w / 2 : 0), ly = py + ddy * dist * 0.8;
+        const box = [lx - 2, ly - 8, lx + w + 2, ly + 8];
+        if (box[0] < L + 2 || box[2] > W - R || box[1] < T || box[3] > H - B - 2) continue;
+        if (boxes.some(b => hit(box, b))) continue;
+        best = { lx, ly, box, dist }; break outer;
+      }
+    }
+    if (!best) best = { lx: px + 10, ly: py, box: [px + 8, py - 8, px + 12 + w, py + 8], dist: 10 };
+    boxes.push(best.box);
+    if (best.dist > 12) {
+      const ex = Math.min(Math.max(px, best.box[0]), best.box[2]), ey = Math.min(Math.max(py, best.box[1]), best.box[3]);
+      labels.append(sv('line', { x1: px, y1: py, x2: ex, y2: ey }, 'leader ' + isCls(d)));
+    }
+    const t = sv('text', { x: best.lx.toFixed(1), y: (best.ly + 4).toFixed(1) }, 'lbl ' + isCls(d)); t.textContent = d.label;
+    t.addEventListener('click', () => show(d));
+    labels.append(t);
+  });
+  plot.append(labels, mineLayer, ring);
+
+  // headings and legend follow the axes
+  const title = `${AXES[yKey].name} vs ${AXES[xKey].name.toLowerCase()}`;
+  $('chart-title').textContent = title;
+  plot.setAttribute('aria-label', `Scatter chart of ${AXES[yKey].name.toLowerCase()} versus ${AXES[xKey].name.toLowerCase()}`);
+  const isDefault = xKey === 'kcal' && yKey === 'fiber';
+  const scoreAxis = xKey === 'score' || yKey === 'score';
+  $('chart-sub').textContent = isDefault
+    ? 'Per 100 g. Every food that fits the pre-run rule sits on or below the dashed line (3 g fiber per 100 kcal).' + (missing ? ` ${missing} foods with no data for these measures aren’t shown.` : '')
+    : (scoreAxis ? 'Higher score = better pre-run fuel. ' : '') + (refCount ? 'Dashed lines mark the pre-run rule’s limits' + (scoreAxis ? ' and the score cutoffs.' : '.') : 'This pair has no rule limit to draw; dot colour still shows which foods fit.')
+      + (missing ? ` ${missing} foods with no data for these measures aren’t shown.` : '');
+  $('legend-guide').hidden = !refCount;
+  $('legend-guide-t').textContent = isDefault || (xKey === 'fiber' && yKey === 'kcal') ? '3 g fiber / 100 kcal' : scoreAxis ? 'Rule limits / score cutoffs' : 'Rule limit';
+  $('ax-x').value = xKey; $('ax-y').value = yKey;
+  document.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preset === xKey + ',' + yKey)));
+  renderMineOnChart();
+  placeRing();
+}
+const isCls = d => d.fits ? 'is-fit' : 'is-no';
+const diamond = (cx, cy, r) => `M${cx},${cy - r}L${cx + r},${cy}L${cx},${cy + r}L${cx - r},${cy}Z`;
+function renderMineOnChart() {
+  mineLayer.replaceChildren();
+  mine.forEach(m => {
+    const p0 = pos(m); if (!p0) return;
+    if (m.usda) { mineLayer.append(sv('path', { d: diamond(p0.x, p0.y, 9.5) }, 'mine-o ' + isCls(m))); return; }
+    const p = sv('path', { d: diamond(p0.x, p0.y, 8) }, 'mine-d ' + isCls(m));
+    const tt = sv('title'); tt.textContent = `${m.name}: ${fmt(val(m, xKey))} ${AXES[xKey].short}, ${fmt(val(m, yKey))} ${AXES[yKey].short} · score ${m.score}`; p.append(tt);
+    p.addEventListener('click', () => show(m));
+    const t = sv('text', { x: p0.x + (p0.x > W - 200 ? -11 : 11), y: p0.y - 9, 'text-anchor': p0.x > W - 200 ? 'end' : 'start' }, 'mine-t ' + isCls(m));
+    t.textContent = m.name.length > 24 ? m.name.slice(0, 23) + '…' : m.name;
+    mineLayer.append(p, t);
+  });
+}
+function placeRing() {
+  const p0 = selected && pos(selected);
+  if (!p0) { ring.setAttribute('visibility', 'hidden'); return; }
+  ring.setAttribute('cx', p0.x); ring.setAttribute('cy', p0.y);
+  ring.setAttribute('visibility', fitFilter === 'all' || selected.fits === (fitFilter === 'fit') ? 'visible' : 'hidden');
+}
+function setAxes(x, y) {
+  xKey = AXES[x] ? x : 'kcal'; yKey = AXES[y] ? y : 'fiber';
+  try { localStorage.setItem(AX_KEY, xKey + ',' + yKey); } catch (e) {}
+  drawChart();
+  if (selected) show(selected, false);
+}
+
+// ---------------- detail card ----------------
+let selected = null;
+const defaultFood = () => FOODS.find(d => d.label === 'Banana') || RANKED[0];
+function show(d, scroll = true) {
+  if (!d) return;
+  selected = d;
+  placeRing();
+  const p = $('detail'); p.replaceChildren();
+  const head = el('div');
+  head.append(el('h2', '', nameOf(d)));
+  if (d.label || d.name.length > 38) head.append(el('p', 'sub', d.name));
+  if (d.group) head.append(el('p', 'sub', d.group));
+  p.append(head);
+
+  const pills = el('div', 'pills');
+  pills.append(el('span', 'pill ' + (d.fits ? 'yes' : 'no'), d.fits ? 'Fits pre-run rule' : 'Doesn’t fit the rule'));
+  const logged = d.mine || entries.some(e => e.kind === 'usda' && String(e.fdc) === d.fdc);
+  if (logged) pills.append(el('span', 'pill you', 'In my foods'));
+  if (d.source === 'claude') pills.append(el('span', 'pill ai', 'Estimated by Claude'));
+  p.append(pills);
+
+  const [t, words] = tier(d.score);
+  const bib = el('div', 'bib t-' + t);
+  const big = el('div', 'big', String(d.score)); big.append(el('small', '', '/100'));
+  const tx = el('div');
+  tx.append(el('div', 'verdict', words));
+  const r = rankOf(d.score), better = RANKED.filter(o => o.score < d.score).length;
+  tx.append(el('div', 'rk', `#${r} of ${RANKED.length} · beats ${Math.round(100 * better / RANKED.length)}% of foods`));
+  bib.append(big, tx); p.append(bib);
+
+  const ul = el('ul', 'checks');
+  [[d.pc >= RULE.minCarb, `≥ ${RULE.minCarb}% of calories from carbs`, fmt(d.pc, '%')],
+   [d.pf <= RULE.maxFat, `≤ ${RULE.maxFat}% from fat`, fmt(d.pf, '%')],
+   [d.pp <= RULE.maxProtein, `≤ ${RULE.maxProtein}% from protein`, fmt(d.pp, '%')],
+   [d.f100 <= RULE.maxFiber, `≤ ${RULE.maxFiber} g fiber per 100 kcal`, fmt(d.f100, ' g')]]
+    .forEach(([ok, label, v]) => { const li = el('li'); li.append(el('span', ok ? 'ok' : 'miss', ok ? '✓' : '✗'), el('span', '', label), el('span', 'v', v)); ul.append(li); });
+  p.append(ul);
+
+  const act = el('div', 'row');
+  if (!logged) {
+    const b = el('button', 'btn btn-sm', 'Add to my foods'); b.type = 'button';
+    b.addEventListener('click', () => { b.disabled = true; store.add({ kind: 'usda', fdc: d.fdc, name: d.name }).catch(flash); });
+    act.append(b);
+  } else {
+    const id = d.mine ? d.entryId : (entries.find(e => e.kind === 'usda' && String(e.fdc) === d.fdc) || {}).id;
+    const b = el('button', 'btn ghost btn-sm', 'Remove from my foods'); b.type = 'button';
+    b.addEventListener('click', () => { b.disabled = true; store.remove(id).catch(flash); });
+    act.append(b);
+  }
+  p.append(act);
+
+  const per = el('p', 'small', 'Per 100 g' + (d.grams ? ` · your ${fmt(d.grams, ' g')} serving is ${fmt(d.servingKcal, ' kcal')}` : ''));
+  const tbl = el('table', 'nut');
+  [['Calories', fmt(d.kcal, ' kcal')], ['Carbs', fmt(d.carbs, ' g')], ['Sugar', fmt(d.sugar, ' g')], ['Fiber', fmt(d.fiber, ' g')],
+   ['Protein', fmt(d.protein, ' g')], ['Fat', fmt(d.fat, ' g')]]
+    .forEach(([k, v]) => { const tr = el('tr'); tr.append(el('td', '', k), el('td', '', v)); tbl.append(tr); });
+  p.append(per, tbl);
+  const mix = el('div', 'mix');
+  [d.pc, d.pp, d.pf].forEach(v => { const s = el('span'); s.style.width = Math.max(0, Math.min(100, v || 0)) + '%'; mix.append(s); });
+  p.append(mix, el('p', 'small', `Calories from carbs ${fmt(d.pc, '%')} · protein ${fmt(d.pp, '%')} · fat ${fmt(d.pf, '%')}`));
+  if (d.note) p.append(el('p', 'small', 'Claude’s assumptions: ' + d.note));
+  const p0 = pos(d);
+  if (!p0) p.append(el('p', 'small', `Not on the chart: this food has no ${AXES[val(d, xKey) == null ? xKey : yKey].name.toLowerCase()} value.`));
+  else if (p0.off) p.append(el('p', 'small', 'This food is past the chart’s axes, so its marker sits on the edge.'));
+
+  const others = RANKED.filter(o => o.fdc !== d.fdc);
+  const near = [...others.filter(o => o.score >= d.score).slice(-2), ...others.filter(o => o.score < d.score).slice(0, 2)];
+  if (near.length) {
+    const np = el('p', 'small near'); np.append('Scores nearby: ');
+    near.forEach((o, i) => { const b = el('button', '', `${nameOf(o)} (${o.score})`); b.type = 'button'; b.addEventListener('click', () => show(o)); np.append(b); if (i < near.length - 1) np.append(', '); });
+    p.append(np);
+  }
+  if (d.fdc && !d.mine || d.usda) {
+    const a = el('a', '', 'View on USDA FoodData Central');
+    a.href = 'https://fdc.nal.usda.gov/fdc-app.html#/food-details/' + encodeURIComponent(d.fdc) + '/nutrients'; a.target = '_blank'; a.rel = 'noopener';
+    const ap = el('p', 'small'); ap.append(a); p.append(ap);
+  }
+  const how = el('details', 'how');
+  how.append(el('summary', '', 'How the score works'),
+    el('p', '', 'Score = 40% carbs + 30% fat + 30% fiber. Carbs earn full marks at 80%+ of calories and none below 40%. Fat earns full marks at 0% and none at 40%+. Fiber earns full marks at 0 g per 100 kcal and none at 6 g+. The pass/fail rule is separate and decides the dot colour.'));
+  p.append(how);
+  if (currentView === 'rankings') markSelectedRow();
+  if (scroll && window.matchMedia('(max-width: 920px)').matches) p.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ---------------- rankings ----------------
+let sortKey = 'score', sortDir = -1;
+const groups = [...new Set(FOODS.map(d => d.group))].sort();
+groups.forEach(g => { const o = el('option', '', g); o.value = g; $('rf-group').append(o); });
+['rf-q', 'rf-group', 'rf-mine'].forEach(id => $(id).addEventListener('input', renderTable));
+$('rf-fit').addEventListener('input', () => setFit($('rf-fit').value));
+document.querySelectorAll('th button[data-sort]').forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.sort;
+  if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = k === 'score' || k === 'pc' ? -1 : 1; }
+  document.querySelectorAll('th button[data-sort]').forEach(o => o.textContent = o.textContent.replace(/ [▾▴]$/, ''));
+  b.textContent += sortDir < 0 ? ' ▾' : ' ▴';
+  renderTable();
+}));
+function renderTable() {
+  const q = $('rf-q').value.toLowerCase().split(/[\s,]+/).filter(Boolean);
+  const g = $('rf-group').value, fitSel = fitFilter, mineOnly = $('rf-mine').checked;
+  const loggedFdc = new Set(entries.filter(e => e.kind === 'usda').map(e => String(e.fdc)));
+  const rows = [...FOODS.map(d => ({ d, isMine: loggedFdc.has(d.fdc) })), ...mine.filter(m => !m.usda).map(d => ({ d, isMine: true }))]
+    .filter(({ d, isMine }) => (!g || d.group === g) && (fitSel === 'all' || (fitSel === 'fit') === d.fits) && (!mineOnly || isMine)
+      && q.every(w => ((d.label || '') + ' ' + d.name).toLowerCase().includes(w)))
+    .sort((a, b) => sortDir * ((a.d[sortKey] ?? 0) - (b.d[sortKey] ?? 0)) || a.d.name.localeCompare(b.d.name));
+  const body = $('rt-body'); body.replaceChildren();
+  rows.forEach(({ d, isMine }) => {
+    const tr = el('tr'); if (isMine) tr.className = 'is-mine';
+    tr.tabIndex = 0; tr._food = d;
+    const name = el('td', 'fname'); const nm = el('span', '', nameOf(d));
+    name.append(nm); if (isMine) name.append(el('span', 'youtag', 'Mine'));
+    if (d.label) name.append(el('small', '', shortName(d.name))); else if (d.group) name.append(el('small', '', d.group));
+    else if (d.source === 'claude') name.append(el('small', '', 'Estimated by Claude')); else name.append(el('small', '', 'From your label'));
+    const sc = el('td'); const sb = el('span', 'sbar'); const tr0 = el('i'); const fill = el('b', 't-' + tier(d.score)[0]);
+    fill.style.width = d.score + '%'; fill.style.background = 'currentColor'; tr0.append(fill);
+    sb.append(el('span', 'num', String(d.score)), tr0); sc.append(sb);
+    tr.append(el('td', 'n', String(rankOf(d.score))), name, sc, el('td', 'n', fmt(d.kcal)), el('td', 'n', fmt(d.f100)),
+      el('td', 'n hide-sm', fmt(d.pc)), el('td', 'n hide-sm', fmt(d.pf)), el('td', d.fits ? 'yes' : 'no', d.fits ? 'Yes' : 'No'));
+    tr.addEventListener('click', () => show(d));
+    tr.addEventListener('keydown', e => { if (e.key === 'Enter') show(d); });
+    body.append(tr);
+  });
+  $('rf-count').textContent = `${rows.length} food${rows.length === 1 ? '' : 's'}`;
+  markSelectedRow();
+}
+function markSelectedRow() {
+  document.querySelectorAll('#rt-body tr').forEach(tr => tr.classList.toggle('sel', !!selected && (tr._food === selected || (selected.entryId && tr._food.entryId === selected.entryId) || (selected.usda && tr._food.fdc === selected.fdc && !tr._food.mine))));
+}
+
+// ---------------- fits-rule filter (shared by chart and rankings) ----------------
+let fitFilter = 'all';
+const FIT_KEY = 'prerun-fuel-fit-filter';
+function setFit(v) {
+  fitFilter = ['all', 'fit', 'no'].includes(v) ? v : 'all';
+  plot.classList.toggle('f-fit', fitFilter === 'fit'); plot.classList.toggle('f-no', fitFilter === 'no');
+  document.querySelectorAll('.seg button[data-fit]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.fit === fitFilter)));
+  $('rf-fit').value = fitFilter;
+  const n = fitFilter === 'all' ? FOODS.length : FOODS.filter(d => d.fits === (fitFilter === 'fit')).length;
+  $('fit-count').textContent = fitFilter === 'all' ? '' : `${n} of ${FOODS.length} USDA foods shown`;
+  placeRing();
+  try { localStorage.setItem(FIT_KEY, fitFilter); } catch (e) {}
+  if (currentView === 'rankings') renderTable();
+}
+document.querySelectorAll('.seg button[data-fit]').forEach(b => b.addEventListener('click', () => setFit(b.dataset.fit)));
+
+// ---------------- views (hash routing) ----------------
+let currentView = 'chart';
+function route() {
+  currentView = location.hash === '#rankings' ? 'rankings' : 'chart';
+  $('view-chart').hidden = currentView !== 'chart';
+  $('view-rankings').hidden = currentView !== 'rankings';
+  $('v-chart').toggleAttribute('aria-current', currentView === 'chart'); if (currentView === 'chart') $('v-chart').setAttribute('aria-current', 'page');
+  $('v-rankings').toggleAttribute('aria-current', currentView === 'rankings'); if (currentView === 'rankings') $('v-rankings').setAttribute('aria-current', 'page');
+  if (currentView === 'rankings') renderTable();
+}
+window.addEventListener('hashchange', route);
+
+// ---------------- input modes ----------------
+const MODES = [['m-search', 'p-search'], ['m-describe', 'p-describe'], ['m-label', 'p-label']];
+function setMode(tab) {
+  MODES.forEach(([t, p]) => { $(t).setAttribute('aria-selected', String(t === tab)); $(p).hidden = t !== tab; });
+}
+MODES.forEach(([t]) => $(t).addEventListener('click', () => setMode(t)));
+
+// search
+const q = $('q'), results = $('results');
+let hits = [], active = -1;
+function search(text) {
+  const words = text.toLowerCase().split(/[\s,]+/).filter(Boolean);
+  if (!words.length) return [];
+  return FOODS.map(d => ({ d, hay: ((d.label || '') + ' ' + d.name).toLowerCase() }))
+    .filter(o => words.every(w => o.hay.includes(w)))
+    .sort((a, b) => (!!b.d.label - !!a.d.label) || (b.hay.startsWith(words[0]) - a.hay.startsWith(words[0])) || a.d.name.length - b.d.name.length)
+    .slice(0, 12);
+}
+function renderResults() {
+  results.replaceChildren();
+  if (!q.value.trim()) { results.hidden = true; q.setAttribute('aria-expanded', 'false'); return; }
+  if (!hits.length) results.append(el('li', 'none', describeReady ? 'Not in the USDA list. Press Enter to have Claude estimate it.' : 'Not in the USDA list. Try “Nutrition label”.'));
+  hits.forEach((h, k) => {
+    const li = el('li'); li.setAttribute('role', 'option'); li.id = 'opt-' + k; li.setAttribute('aria-selected', String(k === active));
+    li.append(el('span', '', h.d.label ? `${h.d.label} — ${shortName(h.d.name)}` : h.d.name), el('small', '', `${h.d.group} · ${h.d.score}`));
+    li.addEventListener('mousedown', e => { e.preventDefault(); pick(k); });
+    results.append(li);
+  });
+  results.hidden = false; q.setAttribute('aria-expanded', 'true');
+  if (active >= 0) q.setAttribute('aria-activedescendant', 'opt-' + active); else q.removeAttribute('aria-activedescendant');
+}
+function pick(k) {
+  const h = hits[k];
+  if (!h) { if (describeReady && q.value.trim()) { $('describe').value = q.value.trim(); setMode('m-describe'); runDescribe(); q.value = ''; hits = []; renderResults(); } return; }
+  q.value = ''; hits = []; active = -1; renderResults();
+  if (!entries.some(e => e.kind === 'usda' && String(e.fdc) === h.d.fdc)) store.add({ kind: 'usda', fdc: h.d.fdc, name: h.d.name }).catch(flash);
+  show(h.d);
+}
+q.addEventListener('input', () => { hits = search(q.value); active = hits.length ? 0 : -1; renderResults(); });
+q.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown') { active = Math.min(hits.length - 1, active + 1); renderResults(); e.preventDefault(); }
+  else if (e.key === 'ArrowUp') { active = Math.max(0, active - 1); renderResults(); e.preventDefault(); }
+  else if (e.key === 'Enter') { pick(active); e.preventDefault(); }
+  else if (e.key === 'Escape') { q.value = ''; hits = []; renderResults(); }
+});
+q.addEventListener('blur', () => { results.hidden = true; q.setAttribute('aria-expanded', 'false'); });
+q.addEventListener('focus', () => { if (q.value.trim()) renderResults(); });
+
+// label form
+const form = $('label-form');
+let pendingSource = 'label', pendingNote = '';
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const num = id => { const s = $(id).value.trim(); return s === '' ? null : Number(s); };
+  const v = { name: $('f-name').value.trim(), grams: num('f-grams'), kcal: num('f-kcal'), carbs: num('f-carbs'), fiber: num('f-fiber'),
+              protein: num('f-protein'), fat: num('f-fat'), sugar: num('f-sugar') };
+  const err = $('form-err');
+  if (!v.name) return void (err.textContent = 'Give the food a name.');
+  for (const k of ['grams', 'kcal', 'carbs', 'fiber', 'protein', 'fat'])
+    if (v[k] == null || !Number.isFinite(v[k]) || v[k] < 0) return void (err.textContent = 'Fill in serving size, calories, carbs, fiber, protein and fat. 0 is fine.');
+  if (v.grams <= 0 || v.kcal <= 0) return void (err.textContent = 'Serving size and calories need to be more than 0.');
+  if (v.fiber > v.carbs) return void (err.textContent = 'Fiber is part of total carbs, so it can’t be more than total carbs.');
+  err.textContent = '';
+  const entry = { kind: 'custom', source: pendingSource, note: pendingNote, ...v };
+  const preview = fromEntry({ ...entry, id: 'preview' });
+  store.add(entry).then(() => {
+    const m = mine.find(x => x.name === v.name && x.servingKcal === v.kcal) || preview;
+    show(m);
+  }).catch(flash);
+  form.reset(); $('f-grams').value = 100; pendingSource = 'label'; pendingNote = ''; $('est-banner').hidden = true;
+});
+
+// describe it (Claude)
+let sample = null, describeReady = false;
+const describeForm = $('describe-form'), dmsg = $('describe-msg');
+describeForm.addEventListener('submit', e => { e.preventDefault(); runDescribe(); });
+async function runDescribe() {
+  const text = $('describe').value.trim();
+  if (!text || !sample) return;
+  const go = $('describe-go'); go.disabled = true; dmsg.className = 'msg'; dmsg.textContent = 'Estimating…';
+  try {
+    const est = await sample.json(
+      'You estimate nutrition facts for food as eaten. Food described by a runner: """' + text.slice(0, 300) + '"""\n' +
+      'Estimate the WHOLE amount described (if no amount is given, assume one typical serving). Use USDA-style values. ' +
+      'Reply with JSON only, no prose: {"name": short food name (max 40 chars), "grams": total weight in g, "kcal": number, ' +
+      '"carbs": total carbohydrate g (including fiber), "fiber": g, "protein": g, "fat": g, "sugar": g, ' +
+      '"note": one short sentence stating the serving and brand assumptions}. ' +
+      'If the text is not a food or drink, reply {"error": "not a food"}.');
+    if (!est || est.error) throw { code: 'not_food' };
+    const n = k => { const v = Number(est[k]); return Number.isFinite(v) && v >= 0 ? Math.round(v * 10) / 10 : ''; };
+    $('f-name').value = String(est.name || text).slice(0, 60);
+    ['grams', 'kcal', 'carbs', 'fiber', 'protein', 'fat', 'sugar'].forEach(k => $('f-' + k).value = n(k));
+    pendingSource = 'claude'; pendingNote = String(est.note || '').slice(0, 300);
+    const bn = $('est-banner'); bn.replaceChildren();
+    const b = el('b', '', 'Claude’s estimate for “' + text.slice(0, 80) + '”. '); bn.append(b, 'Check the numbers against the package if you have it, then add it. ' + (pendingNote ? 'Assumed: ' + pendingNote : ''));
+    bn.hidden = false;
+    dmsg.textContent = ''; $('describe').value = '';
+    setMode('m-label');
+  } catch (err) {
+    dmsg.className = 'msg err';
+    const c = err && err.code;
+    dmsg.textContent = c === 'not_food' ? 'That doesn’t look like a food. Try something like “a plain bagel with jam”.'
+      : c === 'rate_limited' ? 'Too many estimates in a row. Wait a minute and try again.'
+      : c === 'not_granted' ? 'Estimates are turned off for this page. Use the nutrition label instead.'
+      : 'Couldn’t get an estimate. Try again, or enter the nutrition label.';
+    if (c === 'not_granted') { $('m-describe').hidden = true; describeReady = false; setMode('m-label'); }
+  } finally { go.disabled = false; }
+}
+
+// ---------------- boot ----------------
+$('n-foods').textContent = FOODS.length;
+$('n-fit').textContent = FOODS.filter(d => d.fits).length;
+$('n-no').textContent = FOODS.filter(d => !d.fits).length;
+Object.entries(AXES).forEach(([k, a]) => ['ax-x', 'ax-y'].forEach(id => { const o = el('option', '', `${a.name} (${a.unit})`); o.value = k; $(id).append(o); }));
+PRESETS.forEach(([x, y, label]) => { const b = el('button', '', label); b.type = 'button'; b.dataset.preset = x + ',' + y; b.addEventListener('click', () => setAxes(x, y)); document.querySelector('.presets').append(b); });
+$('ax-x').addEventListener('change', () => setAxes($('ax-x').value, yKey));
+$('ax-y').addEventListener('change', () => setAxes(xKey, $('ax-y').value));
+$('ax-swap').addEventListener('click', () => setAxes(yKey, xKey));
+try { const a = (localStorage.getItem(AX_KEY) || '').split(','); if (AXES[a[0]] && AXES[a[1]]) { xKey = a[0]; yKey = a[1]; } } catch (e) {}
+drawChart();
+try { setFit(localStorage.getItem(FIT_KEY) || 'all'); } catch (e) { setFit('all'); }
+entries = store.loadLocal();
+refreshMine();
+route();
+show(defaultFood(), false);
+
+(async () => {
+  if (!window.claude || typeof window.claude.use !== 'function') return;
+  claude.use('sample').then(s => { if (s) { sample = s; describeReady = true; $('m-describe').hidden = false; } });
+  const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+  if (!db || !user) return;
+  const uid = await user.id();
+  if (!uid) return;
+  store.col = db.collection('data/users/' + uid + '/foods');
+  $('where').textContent = 'Loading your saved foods…';
+  let first = true;
+  const timer = setTimeout(() => { if (first) $('where').textContent = 'Saved in this browser (your account didn’t answer)'; }, 10000);
+  store.col.onSnapshot(async snap => {
+    const wasFirst = first;
+    if (first) { first = false; clearTimeout(timer); store.mode = 'db'; $('where').textContent = 'Saved to your account'; }
+    const local = entries.filter(e => String(e.id || '').startsWith('l'));
+    entries = snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+    refreshMine();
+    if (wasFirst && local.length) {   // move anything saved in this browser into the account, once
+      for (const e of local) { const { id, ...rest } = e; try { await store.col.doc().set(rest); } catch (err) {} }
+      try { localStorage.removeItem(LOCAL_KEY); } catch (err) {}
+    }
+  }, () => { clearTimeout(timer); store.mode = 'local'; $('where').textContent = 'Saved in this browser'; });
+})();
+</script>
